@@ -17,13 +17,13 @@ A simple Spring Boot API for ingesting and retrieving system metrics.
 By default, the app starts on:
 http://localhost:8080
 
-API Endpoints
+### API Endpoints
 Health Check
 curl http://localhost:8080/health
 Response:
 OK
 
-Ingest Metric
+### Ingest Metric
 curl -X POST http://localhost:8080/ingest \
   -H "Content-Type: application/json" \
   -d '{"name":"cpu_usage","value":87.5}'
@@ -35,7 +35,7 @@ Response:
   "timestamp": "2025-09-12T19:24:02.005481Z"
 }
 
-Fetch Last 10 Metrics
+### Fetch Last 10 Metrics
 curl http://localhost:8080/metrics
 Response:
 [
@@ -53,7 +53,7 @@ Response:
   }
 ]
 
-Database Schema
+### Database Schema
 Postgres table:
 CREATE TABLE metrics (
   id BIGSERIAL PRIMARY KEY,
@@ -61,3 +61,9 @@ CREATE TABLE metrics (
   value DOUBLE PRECISION NOT NULL,
   timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+### GIT Daily update
+git status
+git add .
+git commit -m "Describe what you changed"
+git push
