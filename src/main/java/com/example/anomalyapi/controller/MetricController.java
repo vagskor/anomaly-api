@@ -20,12 +20,12 @@ public class MetricController {
     // POST /metrics/ingest 
     @PostMapping("/ingest")
     public Metric ingest(@RequestBody MetricRequest request) {
-        return service.createMetric(request);
+        return service.saveMetric(request);
     }
 
     // GET /metrics → fetch all metrics
     @GetMapping
-    public List<Metric> getLast10Metrics() {
-        return service.getLast10Metrics();
+    public List<Metric> getLastMetrics() {
+        return service.getLastMetrics();
     }
 }

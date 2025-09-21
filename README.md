@@ -12,49 +12,78 @@ A simple Spring Boot API for ingesting and retrieving system metrics.
 - PostgreSQL (running locally or via Docker)
 
 ### Run with Maven
+cd C:\Users\Vaggelis\anomaly-api
 .\mvnw.cmd spring-boot:run
 
 By default, the app starts on:
 http://localhost:8080
 
-### API Endpoints
-Health Check
-curl http://localhost:8080/health
-Response:
-OK
 
-### Ingest Metric
-curl -X POST http://localhost:8080/ingest \
-  -H "Content-Type: application/json" \
-  -d '{"name":"cpu_usage","value":87.5}'
+# Anomaly API
+
+## Endpoints
+
+### 1. POST metrics/ingest
+Stores a metric data point.
+**Headers :** Content-Type: application/json
+**Request Body (JSON):**
+```json
+{
+  "metricName": "cpu_usage",
+  "value": 87.5,
+  "timestamp": 1694505600000
+}
 Response:
 {
   "id": 1,
-  "name": "cpu_usage",
+  "metricName": "cpu_usage",
   "value": 87.5,
-  "timestamp": "2025-09-12T19:24:02.005481Z"
+  "timestamp": "2025-09-15T10:15:30Z"
 }
-
-### Fetch Last 10 Metrics
-curl http://localhost:8080/metrics
+```
+### 2. GET/metrics
+Returns the latest metrics (e.g. last 10).
+```json
 Response:
 [
   {
-    "id": 35,
-    "name": "cpu_usage",
+    "id": 1,
+    "metricName": "cpu_usage",
     "value": 87.5,
-    "timestamp": "2025-09-12T17:37:55.774662Z"
+    "timestamp": "2025-09-15T10:15:30Z"
   },
   {
-    "id": 34,
-    "name": "memory_usage",
+    "id": 2,
+    "metricName": "memory_usage",
     "value": 65.2,
-    "timestamp": "2025-09-12T17:37:13.950411Z"
+    "timestamp": "2025-09-15T10:16:10Z"
   }
 ]
+```
+### 3.GET/health
+Response:
+```json
+{
+    "status": "OK"
+}
+```
+### 4.GET/anomalies
+Response:
+```json
+    {
+        "id": 1,
+        "metricName": "cpu_usage",
+        "value": 200.0,
+        "timestamp": "2025-09-19T16:51:14.922638Z",
+        "reason": "Z-score anomaly detected (|x - μ| > 3σ)"
+    }
+```
 
-### Database Schema
+
+
+# Database Schema
 Postgres table:
+```sql
 CREATE TABLE metrics (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -62,7 +91,16 @@ CREATE TABLE metrics (
   timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-### GIT Daily update
+CREATE TABLE anomalies (
+    id BIGSERIAL PRIMARY KEY,
+    metric_name VARCHAR(255) NOT NULL,
+    value DOUBLE PRECISION NOT NULL,
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT now(),
+    reason TEXT
+);
+```
+
+# GIT Daily update
 git status
 git add .
 git commit -m "Describe what you changed"

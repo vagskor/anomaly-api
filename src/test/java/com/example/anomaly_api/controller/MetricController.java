@@ -1,8 +1,8 @@
-package com.example.anomalyapi.controller;
+package com.example.anomaly_api.controller;
 
 import com.example.anomalyapi.model.Metric;
 import com.example.anomalyapi.model.MetricRequest;
-import com.example.anomalyapi.service.MetricService;
+import com.example.anomaly_api.service.MetricService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

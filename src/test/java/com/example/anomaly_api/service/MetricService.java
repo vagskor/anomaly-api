@@ -1,4 +1,4 @@
-package com.example.anomalyapi.service;
+package com.example.anomaly_api.service;
 
 import com.example.anomalyapi.model.Metric;
 import com.example.anomalyapi.model.MetricRequest;
@@ -14,7 +14,7 @@ public class MetricService {
     private long nextId = 1;
 
     public Metric createMetric(MetricRequest request) {
-        Metric metric = new Metric(nextId++, request.getName(), request.getValue());
+        Metric metric = new Metric(nextId++, request.getMetricName(), request.getValue());
         metrics.add(metric);
         return metric;
     }
@@ -22,4 +22,5 @@ public class MetricService {
     public List<Metric> getAllMetrics() {
         return metrics;
     }
+    
 }

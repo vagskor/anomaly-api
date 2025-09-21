@@ -1,4 +1,4 @@
-package com.example.anomalyapi.controller;
+package com.example.anomaly_api.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
