@@ -7,10 +7,13 @@ import com.example.anomalyapi.repository.MetricRepository;
 import com.example.anomalyapi.repository.AnomalyRepository;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.time.Instant;
-import java.util.DoubleSummaryStatistics;
 import java.util.List;
 
 @Service
@@ -18,9 +21,27 @@ public class MetricService {
     private final MetricRepository metricrepository;
     private final AnomalyRepository anomalyrepository;
 
+        // Defaults (can later make configurable via application.properties)
+    private static final int DEFAULT_WINDOW = 30;
+    private static final double DEFAULT_THRESHOLD = 3.0;
+
     public MetricService(MetricRepository metricrepository,AnomalyRepository anomalyrepository) {
         this.metricrepository = metricrepository;
         this.anomalyrepository = anomalyrepository;
+    }
+
+    public List<Metric> getMetrics(String name, Long from, Long to, int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+
+        if (from != null && to != null) {
+            Instant fromInstant = Instant.ofEpochMilli(from);
+            Instant toInstant = Instant.ofEpochMilli(to);
+            return metricrepository.findByNameAndTimestampBetweenOrderByTimestampDesc(
+                name, fromInstant, toInstant, pageable);
+            } 
+            else {
+            return metricrepository.findByNameOrderByTimestampDesc(name, pageable);
+    }
     }
 
     public Metric saveMetric(MetricRequest request) {
@@ -37,41 +58,46 @@ public class MetricService {
 
         Metric saved = metricrepository.save(metric);
 
-        detectAnomaly(saved);
+              // Get recent values for this metric
+        List<Metric> pastMetrics = metricrepository.findByNameOrderByTimestampDesc(
+                metric.getName(),
+                PageRequest.of(0, DEFAULT_WINDOW)
+        );
+        List<Double> pastValues = pastMetrics.stream()
+                .map(Metric::getValue)
+                .toList();
+      
 
+        // Detect anomaly
+        Anomaly anomaly = AnomalyDetector.detect(
+                metric.getName(),
+                metric.getValue(),
+                metric.getTimestamp(),
+                pastValues,
+                DEFAULT_WINDOW,
+                DEFAULT_THRESHOLD
+        );
+
+        if (anomaly != null) {
+            anomalyrepository.save(anomaly);
+
+            // Also log alert
+            logAnomaly(anomaly);
+        }
 
         return saved;
     }
-       
-    private void detectAnomaly(Metric newMetric) {
-        int windowSize = 20; // last N values
-        List<Metric> recent = metricrepository.findByNameOrderByTimestampDesc(
-            newMetric.getName(),
-            PageRequest.of(0, windowSize));
 
-        if (recent.size() < 5) {
-            return ; // not enough data
+    // Log anomaly class 
+        private static final Logger log = LoggerFactory.getLogger(MetricService.class);
+
+        private void logAnomaly(Anomaly anomaly) {
+            log.warn("[ALERT] {} anomaly detected: {} at {}. Reason: {}",
+            anomaly.getMetricName(),
+            anomaly.getValue(),
+            anomaly.getTimestamp(),
+            anomaly.getReason());
         }
-
-        // Compute mean & std dev
-    if (recent.size() < 5) return; // not enough data
-
-    double mean = recent.stream().mapToDouble(Metric::getValue).average().orElse(0.0);
-    double stdDev = Math.sqrt(recent.stream()
-            .mapToDouble(m -> Math.pow(m.getValue() - mean, 2))
-            .average().orElse(0.0));
-
-    if (stdDev > 0 && Math.abs(newMetric.getValue() - mean) > 3 * stdDev) {
-        Anomaly anomaly = new Anomaly(
-                newMetric.getName(),
-                newMetric.getValue(),
-                newMetric.getTimestamp(),
-                "Z-score anomaly detected (|x - μ| > 3σ)"
-        );
-        anomalyrepository.save(anomaly);
-    }
-    }
-
     
 
     public List<Metric> getLastMetrics() {

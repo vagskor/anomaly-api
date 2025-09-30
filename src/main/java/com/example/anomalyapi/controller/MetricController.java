@@ -5,6 +5,7 @@ import com.example.anomalyapi.model.MetricRequest;
 import com.example.anomalyapi.service.MetricService;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.util.List;
 
 @RestController
@@ -24,8 +25,14 @@ public class MetricController {
     }
 
     // GET /metrics → fetch all metrics
+    
     @GetMapping
-    public List<Metric> getLastMetrics() {
-        return service.getLastMetrics();
+    public List<Metric> getMetrics(
+        @RequestParam String metricName,
+        @RequestParam(required = false) Long from,
+        @RequestParam(required = false) Long to,
+        @RequestParam(defaultValue = "10") int limit) {
+        
+        return service.getMetrics(metricName, from, to, limit);
     }
 }
